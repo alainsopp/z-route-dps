@@ -1,3 +1,5 @@
+![header banner](ban.jpg)
+
 # Z-Route Redemption DPS — Hero comparator
 A tool to compare the DPS (damage per second) of heroes in **Z-Route Redemption**.
 
