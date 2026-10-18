@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z-Route Redemption — DPS</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #10141c;
+  --panel: #191f2b;
+  --line: #30394a;
+  --text: #e9eef7;
+  --muted: #a6b1c3;
+  --accent: #75b7ff;
+  --good: #80d6ad;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 system-ui, "Segoe UI", "Noto Sans JP", "Noto Sans", sans-serif;
+}
+main { max-width: 1600px; margin: auto; }
+.topbar {
+  display: flex;
+	justify-content: end;}
+.lang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+h1 { font-size: clamp(24px, 4vw, 34px); margin: 0 0 6px; }
+h2 { font-size: 18px; margin-top: 28px; }
+p { color: var(--muted); }
+a { color: var(--accent); }
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+input, select, button {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+input { flex: 1; min-width: 220px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+.status {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--panel);
+  margin: 12px 0;
+}
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 950px;
+  font-variant-numeric: tabular-nums;
+}
+th, td {
+  text-align: right;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+th {
+  background: #202838;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+th:first-child, td:first-child { text-align: left; }
+tbody tr:hover { background: #202838; }
+.total { color: var(--good); font-weight: 700; }
+.star { color: #ffd580; }
+.muted { color: var(--muted); }
+details {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+}
+summary { cursor: pointer; font-weight: 600; }
+footer { margin-top: 28px; color: var(--muted); }
+@media (max-width: 600px) {
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <label class="lang">
+      <span aria-hidden="true">🌐</span>
+      <span data-i18n="language"></span>
+      <select id="lang">
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+        <option value="ja">日本語</option>
+        <option value="es">Español</option>
+      </select>
+    </label>
+  </div>
+			<img src="ban.jpg"/>
+  <p>
+    <span data-i18n="source"></span>
+    <a href="https://raw.githubusercontent.com/JeffxLabs/zrouteredemption/main/data/hero_skills.json"
+       target="_blank" rel="noopener">hero_skills.json</a>
+  </p>
+
+  <div id="status" class="status"></div>
+
+  <section class="controls">
+    <input id="search" type="search">
+    <select id="star">
+      <option value="1" data-star="1"></option>
+      <option value="2" data-star="2"></option>
+      <option value="3" data-star="3"></option>
+      <option value="4" data-star="4"></option>
+      <option value="5" data-star="5"></option>
+      <option value="all" data-i18n="allStars"></option>
+    </select>
+    <select id="sort">
+      <option value="name" data-i18n="sortName"></option>
+      <option value="dps" data-i18n="sortTotal"></option>
+      <option value="auto" data-i18n="sortAuto"></option>
+      <option value="skill" data-i18n="sortSkill"></option>
+    </select>
+    <button id="export" data-i18n="export"></button>
+  </section>
+
+  <div id="summary" class="muted"></div>
+
+  <h2 data-i18n="tableTitle"></h2>
+  <div class="table-wrap">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <details>
+    <summary data-i18n="detailsTitle"></summary>
+    <p data-i18n="d1"></p>
+    <p data-i18n="d2"></p>
+    <p data-i18n="d3"></p>
+    <p data-i18n="d4"></p>
+    <p data-i18n="d5"></p>
+  </details>
+
+  <footer data-i18n="footer"></footer>
+</main>
+
+<script>
+"use strict";
+
+const DATA_URL =
+  "https://raw.githubusercontent.com/JeffxLabs/zrouteredemption/main/data/hero_skills.json";
+
+/* ------------------------------------------------------------------ */
+/* Traductions                                                         */
+/* ------------------------------------------------------------------ */
+
+const LOCALES = {
+  fr: "fr-FR", en: "en-US", ru: "ru-RU", ja: "ja-JP", es: "es-ES"
+};
+
+const I18N = {
+  fr: {
+    pageTitle: "Z-Route Redemption — Calculateur DPS",
+    title: "Z-Route Redemption — DPS des héros",
+    intro: "DPS théorique des attaques automatiques et des compétences de combat, de 1 à 5 étoiles, calculé à partir des descriptions individuelles.",
+    language: "Langue",
+    source: "Source :",
+    loading: "Chargement des données…",
+    loaded: "{n} héros chargés. Les calculs sont prêts.",
+    error: "Impossible de charger les données. Vérifie ta connexion et ouvre cette page depuis un navigateur autorisant l'accès à GitHub Raw. Erreur : {e}",
+    searchPlaceholder: "Rechercher un héros…",
+    starOne: "{n} étoile",
+    starMany: "{n} étoiles",
+    allStars: "Toutes les étoiles",
+    sortName: "Trier par nom",
+    sortTotal: "DPS total décroissant",
+    sortAuto: "DPS automatique décroissant",
+    sortSkill: "DPS compétence décroissant",
+    export: "Exporter CSV",
+    tableTitle: "DPS par héros",
+    thHero: "Héros",
+    thStar: "Étoile",
+    thAuto: "Auto (% ATQ/s)",
+    thSkill: "Compétence (% ATQ/s)",
+    thTotal: "DPS total (% ATQ/s)",
+    summary: "{shown} ligne(s) affichée(s) sur {total}.",
+    na: "N/D",
+    heroDefault: "Héros {id}",
+    detailsTitle: "Comprendre les calculs et leurs limites",
+    d1: "Pour chaque compétence offensive, le coefficient est lu dans le texte de la description correspondant à l'étoile. Les descriptions générales des améliorations ne sont pas utilisées pour reconstruire ce coefficient.",
+    d2: "Formule : DPS = coefficient de dégâts × nombre de coups × nombre de cibles explicites ÷ temps de recharge.",
+    d3: "Le résultat est exprimé en % ATQ par seconde. Par exemple, 100 % ATQ/s signifie l'équivalent d'une fois l'ATQ de référence par seconde.",
+    d4: "Les descriptions qui ne permettent pas d'identifier sans ambiguïté le coefficient ou le temps de recharge sont marquées « N/D ». Les cibles implicites, les passifs et les bonus d'ATQ ne sont pas inventés ni estimés.",
+    d5: "Le calcul additionne les dégâts des cibles explicitement indiquées. Si une compétence touche plusieurs cibles, le DPS total peut donc être supérieur au DPS subi par une cible unique.",
+    footer: "Calcul local dans le navigateur à partir du JSON distant. Les résultats dépendent de la version du fichier source.",
+    csvId: "ID",
+    csvHero: "Héros",
+    csvStars: "Étoiles",
+    csvAuto: "DPS automatique (% ATQ/s)",
+    csvSkill: "DPS compétence (% ATQ/s)",
+    csvTotal: "DPS total (% ATQ/s)"
+  },
+
+  en: {
+    pageTitle: "Z-Route Redemption — DPS Calculator",
+    title: "Z-Route Redemption — Hero DPS",
+    intro: "Theoretical DPS of auto attacks and combat skills, from 1 to 5 stars, calculated from the individual descriptions.",
+    language: "Language",
+    source: "Source:",
+    loading: "Loading data…",
+    loaded: "{n} heroes loaded. Calculations are ready.",
+    error: "Unable to load the data. Check your connection and open this page in a browser that allows access to GitHub Raw. Error: {e}",
+    searchPlaceholder: "Search for a hero…",
+    starOne: "{n} star",
+    starMany: "{n} stars",
+    allStars: "All stars",
+    sortName: "Sort by name",
+    sortTotal: "Total DPS, descending",
+    sortAuto: "Auto DPS, descending",
+    sortSkill: "Skill DPS, descending",
+    export: "Export CSV",
+    tableTitle: "DPS per hero",
+    thHero: "Hero",
+    thStar: "Star",
+    thAuto: "Auto (% ATK/s)",
+    thSkill: "Skill (% ATK/s)",
+    thTotal: "Total DPS (% ATK/s)",
+    summary: "{shown} row(s) displayed out of {total}.",
+    na: "N/A",
+    heroDefault: "Hero {id}",
+    detailsTitle: "Understanding the calculations and their limits",
+    d1: "For each offensive skill, the coefficient is read from the description text matching the star level. The general upgrade descriptions are not used to rebuild this coefficient.",
+    d2: "Formula: DPS = damage coefficient × number of hits × number of explicit targets ÷ cooldown.",
+    d3: "The result is expressed in % ATK per second. For example, 100% ATK/s means the equivalent of the reference ATK once per second.",
+    d4: "Descriptions that do not allow the coefficient or the cooldown to be identified unambiguously are marked “N/A”. Implicit targets, passives and ATK bonuses are neither invented nor estimated.",
+    d5: "The calculation adds up the damage dealt to the explicitly stated targets. If a skill hits several targets, the total DPS may therefore be higher than the DPS received by a single target.",
+    footer: "Calculated locally in the browser from the remote JSON. Results depend on the version of the source file.",
+    csvId: "ID",
+    csvHero: "Hero",
+    csvStars: "Stars",
+    csvAuto: "Auto DPS (% ATK/s)",
+    csvSkill: "Skill DPS (% ATK/s)",
+    csvTotal: "Total DPS (% ATK/s)"
+  },
+
+  ru: {
+    pageTitle: "Z-Route Redemption — Калькулятор DPS",
+    title: "Z-Route Redemption — DPS героев",
+    intro: "Теоретический DPS автоатак и боевых навыков от 1 до 5 звёзд, рассчитанный по отдельным описаниям.",
+    language: "Язык",
+    source: "Источник:",
+    loading: "Загрузка данных…",
+    loaded: "Загружено героев: {n}. Расчёты готовы.",
+    error: "Не удалось загрузить данные. Проверьте подключение и откройте страницу в браузере, разрешающем доступ к GitHub Raw. Ошибка: {e}",
+    searchPlaceholder: "Поиск героя…",
+    starOne: "{n} звезда",
+    starMany: "Звёзд: {n}",
+    allStars: "Все звёзды",
+    sortName: "Сортировать по имени",
+    sortTotal: "Общий DPS по убыванию",
+    sortAuto: "DPS автоатаки по убыванию",
+    sortSkill: "DPS навыка по убыванию",
+    export: "Экспорт в CSV",
+    tableTitle: "DPS по героям",
+    thHero: "Герой",
+    thStar: "Звезда",
+    thAuto: "Авто (% АТК/с)",
+    thSkill: "Навык (% АТК/с)",
+    thTotal: "Общий DPS (% АТК/с)",
+    summary: "Показано строк: {shown} из {total}.",
+    na: "Н/Д",
+    heroDefault: "Герой {id}",
+    detailsTitle: "Как устроены расчёты и их ограничения",
+    d1: "Для каждого атакующего навыка коэффициент считывается из текста описания, соответствующего уровню звёзд. Общие описания улучшений для восстановления этого коэффициента не используются.",
+    d2: "Формула: DPS = коэффициент урона × число ударов × число явно указанных целей ÷ время перезарядки.",
+    d3: "Результат выражается в % АТК в секунду. Например, 100 % АТК/с означает эквивалент базовой АТК один раз в секунду.",
+    d4: "Описания, по которым нельзя однозначно определить коэффициент или время перезарядки, помечаются «Н/Д». Неявные цели, пассивные эффекты и бонусы АТК не выдумываются и не оцениваются.",
+    d5: "Расчёт суммирует урон по явно указанным целям. Если навык поражает несколько целей, общий DPS может быть выше, чем DPS, получаемый одной целью.",
+    footer: "Расчёт выполняется локально в браузере на основе удалённого JSON. Результаты зависят от версии исходного файла.",
+    csvId: "ID",
+    csvHero: "Герой",
+    csvStars: "Звёзды",
+    csvAuto: "DPS автоатаки (% АТК/с)",
+    csvSkill: "DPS навыка (% АТК/с)",
+    csvTotal: "Общий DPS (% АТК/с)"
+  },
+
+  ja: {
+    pageTitle: "Z-Route Redemption — DPS計算ツール",
+    title: "Z-Route Redemption — ヒーローDPS",
+    intro: "星1〜5における通常攻撃と戦闘スキルの理論上のDPSを、個別の説明文から計算します。",
+    language: "言語",
+    source: "ソース：",
+    loading: "データを読み込み中…",
+    loaded: "{n}体のヒーローを読み込みました。計算の準備ができました。",
+    error: "データを読み込めませんでした。接続を確認し、GitHub Rawへのアクセスを許可しているブラウザでこのページを開いてください。エラー：{e}",
+    searchPlaceholder: "ヒーローを検索…",
+    starOne: "星{n}",
+    starMany: "星{n}",
+    allStars: "すべての星",
+    sortName: "名前順",
+    sortTotal: "合計DPS（降順）",
+    sortAuto: "通常攻撃DPS（降順）",
+    sortSkill: "スキルDPS（降順）",
+    export: "CSVを出力",
+    tableTitle: "ヒーロー別DPS",
+    thHero: "ヒーロー",
+    thStar: "星",
+    thAuto: "通常攻撃（% ATK/秒）",
+    thSkill: "スキル（% ATK/秒）",
+    thTotal: "合計DPS（% ATK/秒）",
+    summary: "{total}行中{shown}行を表示しています。",
+    na: "該当なし",
+    heroDefault: "ヒーロー {id}",
+    detailsTitle: "計算方法とその制限について",
+    d1: "各攻撃スキルの係数は、星の段階に対応する説明文から読み取ります。強化に関する一般的な説明文は、この係数の再構築には使用しません。",
+    d2: "計算式：DPS ＝ ダメージ係数 × ヒット数 × 明示されたターゲット数 ÷ クールダウン。",
+    d3: "結果は1秒あたりのATK割合（% ATK/秒）で表されます。たとえば100% ATK/秒は、基準ATKを毎秒1回分与えることに相当します。",
+    d4: "係数やクールダウンを一意に特定できない説明文は「該当なし」と表示されます。暗黙のターゲット、パッシブ、ATKボーナスは推測も補完もしていません。",
+    d5: "計算では、明示されたターゲットへのダメージを合算します。スキルが複数のターゲットに当たる場合、合計DPSは単体のターゲットが受けるDPSより大きくなることがあります。",
+    footer: "リモートのJSONをもとに、ブラウザ上でローカルに計算しています。結果はソースファイルのバージョンに依存します。",
+    csvId: "ID",
+    csvHero: "ヒーロー",
+    csvStars: "星",
+    csvAuto: "通常攻撃DPS（% ATK/秒）",
+    csvSkill: "スキルDPS（% ATK/秒）",
+    csvTotal: "合計DPS（% ATK/秒）"
+  },
+
+  es: {
+    pageTitle: "Z-Route Redemption — Calculadora de DPS",
+    title: "Z-Route Redemption — DPS de los héroes",
+    intro: "DPS teórico de los ataques automáticos y las habilidades de combate, de 1 a 5 estrellas, calculado a partir de las descripciones individuales.",
+    language: "Idioma",
+    source: "Fuente:",
+    loading: "Cargando datos…",
+    loaded: "{n} héroes cargados. Los cálculos están listos.",
+    error: "No se pudieron cargar los datos. Comprueba tu conexión y abre esta página en un navegador que permita el acceso a GitHub Raw. Error: {e}",
+    searchPlaceholder: "Buscar un héroe…",
+    starOne: "{n} estrella",
+    starMany: "{n} estrellas",
+    allStars: "Todas las estrellas",
+    sortName: "Ordenar por nombre",
+    sortTotal: "DPS total descendente",
+    sortAuto: "DPS automático descendente",
+    sortSkill: "DPS de habilidad descendente",
+    export: "Exportar CSV",
+    tableTitle: "DPS por héroe",
+    thHero: "Héroe",
+    thStar: "Estrella",
+    thAuto: "Auto (% ATQ/s)",
+    thSkill: "Habilidad (% ATQ/s)",
+    thTotal: "DPS total (% ATQ/s)",
+    summary: "{shown} fila(s) mostrada(s) de {total}.",
+    na: "N/D",
+    heroDefault: "Héroe {id}",
+    detailsTitle: "Entender los cálculos y sus límites",
+    d1: "Para cada habilidad ofensiva, el coeficiente se lee en el texto de la descripción correspondiente a la estrella. Las descripciones generales de las mejoras no se usan para reconstruir este coeficiente.",
+    d2: "Fórmula: DPS = coeficiente de daño × número de golpes × número de objetivos explícitos ÷ tiempo de reutilización.",
+    d3: "El resultado se expresa en % de ATQ por segundo. Por ejemplo, 100 % ATQ/s equivale a una vez el ATQ de referencia por segundo.",
+    d4: "Las descripciones que no permiten identificar sin ambigüedad el coeficiente o el tiempo de reutilización se marcan como «N/D». Los objetivos implícitos, los pasivos y las bonificaciones de ATQ no se inventan ni se estiman.",
+    d5: "El cálculo suma el daño de los objetivos indicados explícitamente. Si una habilidad alcanza a varios objetivos, el DPS total puede ser superior al DPS recibido por un único objetivo.",
+    footer: "Cálculo local en el navegador a partir del JSON remoto. Los resultados dependen de la versión del archivo fuente.",
+    csvId: "ID",
+    csvHero: "Héroe",
+    csvStars: "Estrellas",
+    csvAuto: "DPS automático (% ATQ/s)",
+    csvSkill: "DPS de habilidad (% ATQ/s)",
+    csvTotal: "DPS total (% ATQ/s)"
+  }
+};
+
+const LANG_KEY = "zroute-dps-lang";
+let lang = "fr";
+let status = { type: "loading" };
+
+function detectLang() {
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved && I18N[saved]) return saved;
+  } catch (e) { /* stockage indisponible */ }
+
+  const nav = (navigator.language || "fr").slice(0, 2).toLowerCase();
+  return I18N[nav] ? nav : "fr";
+}
+
+function t(key, vars = {}) {
+  const dict = I18N[lang] || I18N.fr;
+  let text = dict[key] ?? I18N.fr[key] ?? key;
+  for (const [name, value] of Object.entries(vars)) {
+    text = text.replaceAll(`{${name}}`, value);
+  }
+  return text;
+}
+
+function starLabel(n) {
+  return t(n === 1 ? "starOne" : "starMany", { n });
+}
+
+function renderStatus() {
+  if (status.type === "loading") {
+    $("status").textContent = t("loading");
+  } else if (status.type === "loaded") {
+    $("status").textContent = t("loaded", { n: status.count });
+  } else {
+    $("status").textContent = t("error", { e: status.message });
+  }
+}
+
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  document.title = t("pageTitle");
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+
+  document.querySelectorAll("[data-star]").forEach(el => {
+    el.textContent = starLabel(Number(el.dataset.star));
+  });
+
+  $("search").placeholder = t("searchPlaceholder");
+  $("lang").value = lang;
+
+  renderStatus();
+  render();
+}
+
+function setLanguage(newLang) {
+  if (!I18N[newLang]) return;
+  lang = newLang;
+  try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignoré */ }
+  applyLanguage();
+}
+
+/* ------------------------------------------------------------------ */
+/* Calculs                                                             */
+/* ------------------------------------------------------------------ */
+
+let heroes = {};
+let rows = [];
+
+const $ = id => document.getElementById(id);
+
+function parsePercent(text) {
+  if (!text) return null;
+
+  // Extrait le coefficient de dégâts associé à ATK dans la description,
+  // sans utiliser les bonus génériques de star_upgrades.
+  const patterns = [
+    /damage equal to\s*([\d.]+)\s*%\s*ATK/i,
+    /dealing\s+([\d.]+)\s*%\s*ATK\s+damage/i,
+    /deals?\s+([\d.]+)\s*%\s*ATK\s+damage/i,
+    /damage of\s*([\d.]+)\s*%\s*ATK/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return Number(match[1]);
+  }
+
+  return null;
+}
+
+function parseHits(text) {
+  if (!text) return 1;
+
+  const patterns = [
+    /(\d+)\s+times\b/i,
+    /(\d+)\s+consecutive attacks?\b/i,
+    /attacks?\s+(\d+)\s+times\b/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return Number(match[1]);
+  }
+
+  return 1;
+}
+
+function getTargets(text) {
+  if (!text) return 1;
+
+  const patterns = [
+    /\b(?:attack|attacks|at|target|targets)\s+(\d+)\s+(?:random\s+)?(?:enemies|enemy|targets)\b/i,
+    /(?:to|at)\s+(\d+)\s+(?:random\s+)?enemies\b/i,
+    /(\d+)\s+(?:random\s+)?enemies\b/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return Number(match[1]);
+  }
+
+  return 1;
+}
+
+function getSkill(hero, slot) {
+  return (hero.skills || []).find(skill => skill.slot === slot) || null;
+}
+
+function getStarEntry(skill, star) {
+  if (!skill || !Array.isArray(skill.by_star)) return null;
+  return skill.by_star.find(entry => Number(entry.star) === star) || null;
+}
+
+function skillDps(skill, star) {
+  const entry = getStarEntry(skill, star);
+  if (!entry || !entry.text) {
+    return { value: null, coefficient: null, cooldown: null };
+  }
+
+  const coefficient = parsePercent(entry.text);
+  const cooldown = Number(skill.cooldown_s);
+  const hits = parseHits(entry.text);
+  const targets = getTargets(entry.text);
+
+  if (
+    coefficient === null ||
+    !Number.isFinite(cooldown) ||
+    cooldown <= 0
+  ) {
+    return {
+      value: null,
+      coefficient,
+      cooldown: Number.isFinite(cooldown) ? cooldown : null
+    };
+  }
+
+  return {
+    value: coefficient * hits * targets / cooldown,
+    coefficient,
+    cooldown,
+    hits,
+    targets,
+    description: entry.text
+  };
+}
+
+function fmt(value) {
+  if (value === null || !Number.isFinite(value)) return t("na");
+  return value.toLocaleString(LOCALES[lang], {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function makeRow(heroId, hero, star) {
+  const auto = skillDps(getSkill(hero, 1), star);
+  const combat = skillDps(getSkill(hero, 2), star);
+
+  // Une compétence sans coefficient de dégâts est ignorée.
+  const combatDps =
+    combat.coefficient === null || combat.coefficient === 0
+      ? 0
+      : combat.value;
+
+  const total =
+    auto.value !== null && combatDps !== null
+      ? auto.value + combatDps
+      : auto.value;
+
+  return {
+    id: heroId,
+    name: hero.name || "",
+    star,
+    auto,
+    combat: { ...combat, value: combatDps },
+    total
+  };
+}
+
+function allRows() {
+  const result = [];
+
+  for (const [id, hero] of Object.entries(heroes)) {
+    for (let star = 1; star <= 5; star++) {
+      result.push(makeRow(id, hero, star));
+    }
+  }
+
+  return result;
+}
+
+// Nom affiché : celui du JSON, ou un libellé traduit par défaut.
+function displayName(row) {
+  return row.name || t("heroDefault", { id: row.id });
+}
+
+/* ------------------------------------------------------------------ */
+/* Affichage                                                           */
+/* ------------------------------------------------------------------ */
+
+function render() {
+  const query = $("search").value.trim().toLocaleLowerCase(LOCALES[lang]);
+  const starFilter = $("star").value;
+  const sort = $("sort").value;
+
+  let filtered = rows.filter(row =>
+    displayName(row).toLocaleLowerCase(LOCALES[lang]).includes(query)
+  );
+
+  if (starFilter !== "all") {
+    filtered = filtered.filter(row => row.star === Number(starFilter));
+  }
+
+  filtered.sort((a, b) => {
+    if (sort === "dps") {
+      return (b.total ?? -Infinity) - (a.total ?? -Infinity);
+    }
+    if (sort === "auto") {
+      return (b.auto.value ?? -Infinity) - (a.auto.value ?? -Infinity);
+    }
+    if (sort === "skill") {
+      return (b.combat.value ?? -Infinity) - (a.combat.value ?? -Infinity);
+    }
+
+    return displayName(a).localeCompare(displayName(b), LOCALES[lang]) ||
+           a.star - b.star;
+  });
+
+  const allStars = starFilter === "all";
+
+  $("thead").innerHTML = `
+    <tr>
+      <th>${t("thHero")}</th>
+      ${allStars ? `<th>${t("thStar")}</th>` : ""}
+      <th>${t("thAuto")}</th>
+      <th>${t("thSkill")}</th>
+      <th>${t("thTotal")}</th>
+    </tr>`;
+
+  $("tbody").replaceChildren();
+
+  const fragment = document.createDocumentFragment();
+
+  for (const row of filtered) {
+    const tr = document.createElement("tr");
+
+    const cells = [
+      displayName(row),
+      ...(allStars ? [`${row.star} ★`] : []),
+      fmt(row.auto.value),
+      fmt(row.combat.value),
+      fmt(row.total)
+    ];
+
+    cells.forEach((value, index) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+
+      if (index === 0) td.title = `ID : ${row.id}`;
+      if (index === cells.length - 1) td.className = "total";
+      if (allStars && index === 1) td.className = "star";
+
+      tr.appendChild(td);
+    });
+
+    fragment.appendChild(tr);
+  }
+
+  $("tbody").appendChild(fragment);
+  $("summary").textContent =
+    t("summary", { shown: filtered.length, total: rows.length });
+}
+
+function exportCsv() {
+  const query = $("search").value.trim().toLocaleLowerCase(LOCALES[lang]);
+  const starFilter = $("star").value;
+
+  const filtered = rows.filter(row =>
+    displayName(row).toLocaleLowerCase(LOCALES[lang]).includes(query) &&
+    (starFilter === "all" || row.star === Number(starFilter))
+  );
+
+  const header = [
+    t("csvId"), t("csvHero"), t("csvStars"),
+    t("csvAuto"), t("csvSkill"), t("csvTotal")
+  ];
+
+  const escape = value =>
+    '"' + String(value ?? "").replace(/"/g, '""') + '"';
+
+  const lines = [header.map(escape).join(";")];
+
+  for (const row of filtered) {
+    lines.push([
+      row.id, displayName(row), row.star,
+      row.auto.value ?? "",
+      row.combat.value ?? "",
+      row.total ?? ""
+    ].map(escape).join(";"));
+  }
+
+  const blob = new Blob(
+    ["\uFEFF" + lines.join("\r\n")],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "zroute-redemption-dps.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function init() {
+  try {
+    const response = await fetch(DATA_URL);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    heroes = data.heroes || {};
+    rows = allRows();
+
+    status = { type: "loaded", count: Object.keys(heroes).length };
+    renderStatus();
+    render();
+  } catch (error) {
+    console.error(error);
+    status = { type: "error", message: error.message };
+    renderStatus();
+  }
+}
+
+$("search").addEventListener("input", render);
+$("star").addEventListener("change", render);
+$("sort").addEventListener("change", render);
+$("export").addEventListener("click", exportCsv);
+$("lang").addEventListener("change", e => setLanguage(e.target.value));
+
+lang = detectLang();
+applyLanguage();
+init();
+</script>
+</body>
+</html>
