@@ -1,6 +1,8 @@
 # Z-Route Redemption DPS — Hero comparator
 A tool to compare the DPS (damage per second) of heroes in **Z-Route Redemption**.
 
+[Z-Route Redemption DPS](https://alainsopp.github.io/z-route-dps/)
+
 The website helps players evaluate and compare heroes based on their damage output, making it easier to identify the most effective heroes for their team.
 
 ## ✨ Features
