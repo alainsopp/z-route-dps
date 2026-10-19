@@ -1,764 +1,860 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Z-Route Redemption — DPS</title>
+<title>Z-Route Redemption — Comparateur DPS</title>
+
 <style>
 :root {
-  color-scheme: dark;
-  --bg: #10141c;
-  --panel: #191f2b;
-  --line: #30394a;
-  --text: #e9eef7;
-  --muted: #a6b1c3;
-  --accent: #75b7ff;
-  --good: #80d6ad;
+  --bg:#10151b; --panel:#1b242e; --field:#111820;
+  --border:#354451; --text:#eef3f8; --muted:#98a8b6;
+  --green:#48e08b; --red:#ff7373; --orange:#ffb65c;
 }
-* { box-sizing: border-box; }
+* { box-sizing:border-box }
 body {
-  margin: 0;
-  padding: 24px;
-  background: var(--bg);
-  color: var(--text);
-  font: 14px/1.5 system-ui, "Segoe UI", "Noto Sans JP", "Noto Sans", sans-serif;
+  margin:0; padding:24px 16px 40px; color:var(--text);
+  background:radial-gradient(ellipse at top,#263541,var(--bg) 65%);
+  font-family:system-ui,-apple-system,sans-serif;
 }
-main { max-width: 1600px; margin: auto; }
-.topbar {
-  display: flex;
-	justify-content: end;}
-.lang {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
+main { max-width:1600px; margin:auto }
+header { text-align:center; margin-bottom:24px }
+.eyebrow { color:var(--green); font-size:11px; letter-spacing:3px; font-weight:800 }
+h1 { margin:8px 0; font-size:clamp(26px,4vw,38px) }
+h2 { font-size:17px; margin:0 0 14px }
+h3 { font-size:13px }
+p { margin-top:0 }
+.muted, header p { color:var(--muted); font-size:12px }
+.toolbar {
+  display:flex; justify-content:flex-end; align-items:center;
+  gap:10px; margin-bottom:18px;
 }
-h1 { font-size: clamp(24px, 4vw, 34px); margin: 0 0 6px; }
-h2 { font-size: 18px; margin-top: 28px; }
-p { color: var(--muted); }
-a { color: var(--accent); }
-.controls {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 20px 0;
+label { display:block; color:var(--muted); font-size:11px; margin-bottom:6px }
+select {
+  width:100%; padding:9px 10px; border:1px solid var(--border);
+  border-radius:7px; background:var(--field); color:var(--text);
+  font-size:13px; cursor:pointer; min-width:0;
 }
-input, select, button {
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--text);
-  font: inherit;
+.toolbar select { width:auto; min-width:145px }
+.workspace {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(420px,1.05fr);
+  gap:18px; align-items:start;
 }
-input { flex: 1; min-width: 220px; }
-button { cursor: pointer; }
-button:hover { border-color: var(--accent); }
-.status {
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--panel);
-  margin: 12px 0;
+.comparison-column { min-width:0 }
+.ranking-column { min-width:0; position:sticky; top:12px }
+.heroes { display:grid; grid-template-columns:1fr 1fr; gap:12px }
+.card,.panel {
+  background:linear-gradient(145deg,#202c37,#171f28);
+  border:1px solid var(--border); border-radius:12px; overflow:hidden;
 }
+.card-head { padding:14px; border-bottom:1px solid var(--border) }
+.side-label { color:var(--orange); font-size:10px; font-weight:800; letter-spacing:2px }
+.hero-image {
+  height:180px;
+  border:1px dashed #536371;
+  border-radius:7px;
+  background:#111820;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#647685;
+  font-size:11px;
+  margin:12px 0;
+  overflow:hidden;
+}
+.hero-image img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  padding:4px;
+}
+.card-body { padding:12px }
+.section-label {
+  font-size:10px; color:var(--orange); letter-spacing:1px;
+  font-weight:800; margin-bottom:5px;
+}
+.attack { padding:9px 0; border-bottom:1px solid #ffffff12 }
+.attack:last-child { border-bottom:0 }
+.attack-top { display:flex; justify-content:space-between; gap:5px; align-items:center }
+.attack-top strong { font-size:12px }
+.cooldown { color:var(--muted); font-size:10px; text-align:right }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:7px }
+.stat {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:4px; min-width:0; background:#111820;
+  border:1px solid #2d3945; border-radius:6px; padding:6px;
+}
+.stat span { font-size:9px; color:var(--muted) }
+.stat strong { font-size:12px; font-variant-numeric:tabular-nums }
+.dps-line {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:5px; margin-top:6px; padding:7px;
+  background:#111820; border-radius:6px;
+}
+.dps-line span { font-size:10px; color:var(--muted) }
+.dps-line strong { font-size:14px; font-variant-numeric:tabular-nums }
+.panel { padding:16px; margin-top:16px }
+.panel > p { color:var(--muted); font-size:11px; line-height:1.5 }
+.compare { margin-top:17px }
+.compare-head {
+  display:flex; justify-content:space-between; gap:8px;
+  align-items:center; margin-bottom:7px; font-size:11px;
+}
+.compare-title { color:var(--muted); text-align:center; font-size:10px }
+.track { display:flex; align-items:center; gap:4px; height:10px }
+.half { width:50%; height:100%; background:#303b46; display:flex; overflow:hidden; border-radius:3px }
+.half.left { justify-content:flex-end }
+.fill { height:100%; width:0; background:#697986; transition:width .2s }
+.fill.win { background:var(--green) }
+.fill.lose { background:var(--red) }
+.midline { width:2px; height:15px; background:#8d9aa5; flex-shrink:0 }
+.total {
+  margin-top:16px; padding:16px; border:1px solid #397653;
+  border-radius:12px; background:linear-gradient(120deg,#1b3028,#19232b);
+}
+.total h2 {
+  text-align:center; color:var(--green); font-size:12px; letter-spacing:2px;
+}
+.total-values {
+  display:grid; grid-template-columns:1fr auto 1fr;
+  align-items:center; gap:8px; text-align:center; margin:16px 0;
+}
+.total-values strong {
+  display:block; font-size:clamp(20px,3vw,29px);
+  margin:5px 0; font-variant-numeric:tabular-nums;
+}
+.total-values span { color:var(--muted); font-size:10px }
+.total-values .vs { color:var(--orange); font-weight:900 }
+.total-track { display:flex; gap:4px; height:13px }
+.total-track .half { height:13px }
+.result { text-align:center; margin:14px 0 0; font-weight:700; font-size:12px }
+.status { color:var(--muted); text-align:center; font-size:12px; padding:12px }
+.ranking-heading {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:10px; flex-wrap:wrap; margin-bottom:12px;
+}
+.ranking-heading h2 { margin:0 }
+.ranking-controls {
+  display:flex; align-items:center; gap:8px;
+}
+.ranking-controls label { margin:0; white-space:nowrap }
+.ranking-controls select { width:auto; min-width:100px }
 .table-wrap {
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  overflow:auto; max-height:75vh; border:1px solid var(--border);
+  border-radius:8px;
 }
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 950px;
-  font-variant-numeric: tabular-nums;
+table { border-collapse:collapse; width:100%; font-size:11px; white-space:nowrap }
+thead { position:sticky; top:0; z-index:2; background:#202d38 }
+th,td {
+  padding:10px 8px; text-align:right;
+  border-bottom:1px solid #ffffff12;
 }
-th, td {
-  text-align: right;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
+th:first-child,td:first-child { text-align:left }
+th { color:var(--muted); font-weight:700 }
+th button {
+  appearance:none; border:0; padding:0; background:none;
+  color:var(--text); font:inherit; cursor:pointer; text-align:inherit;
 }
-th {
-  background: #202838;
-  position: sticky;
-  top: 0;
-  z-index: 1;
+th button:hover { color:var(--green) }
+th button .arrow { color:var(--orange); margin-left:3px }
+tbody tr:hover { background:#ffffff08 }
+tbody tr.best { background:#48e08b0c }
+.rank-number { color:var(--muted); margin-right:5px }
+.hero-cell { display:flex; align-items:center; gap:7px; text-align:left }
+.hero-cell img {
+  width:30px; height:30px; object-fit:contain;
+  background:#111820; border-radius:5px; flex-shrink:0;
 }
-th:first-child, td:first-child { text-align: left; }
-tbody tr:hover { background: #202838; }
-.total { color: var(--good); font-weight: 700; }
-.star { color: #ffd580; }
-.muted { color: var(--muted); }
-details {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px;
-  margin: 12px 0;
+.hero-name { font-weight:650; max-width:145px; overflow:hidden; text-overflow:ellipsis }
+.dps-cell { color:var(--green); font-weight:800 }
+.damage-cell { font-variant-numeric:tabular-nums }
+.empty { padding:25px; text-align:center; color:var(--muted) }
+.footnote { color:var(--muted); font-size:10px; line-height:1.7; margin-top:18px }
+@media(max-width:1100px) {
+  .workspace { grid-template-columns:1fr }
+  .ranking-column { position:static }
+  .table-wrap { max-height:600px }
 }
-summary { cursor: pointer; font-weight: 600; }
-footer { margin-top: 28px; color: var(--muted); }
-@media (max-width: 600px) {
-  body { padding: 12px; }
+@media(max-width:600px) {
+  body { padding:16px 9px 28px }
+  .heroes { grid-template-columns:1fr }
+  .toolbar { justify-content:center }
+  .panel { padding:11px }
+  .ranking-heading { align-items:flex-start }
+  .ranking-controls { width:100%; justify-content:space-between }
+  .table-wrap { max-height:65vh }
+  th,td { padding:9px 6px }
+  .hero-name { max-width:110px }
 }
 </style>
 </head>
+
 <body>
 <main>
-  <div class="topbar">
-    <label class="lang">
-      <span aria-hidden="true">🌐</span>
-      <span data-i18n="language"></span>
-      <select id="lang">
-        <option value="fr">Français</option>
-        <option value="en">English</option>
-        <option value="ru">Русский</option>
-        <option value="ja">日本語</option>
-        <option value="es">Español</option>
-      </select>
-    </label>
-  </div>
-			<img src="ban.jpg"/>
-  <p>
-    <span data-i18n="source"></span>
-    <a href="https://raw.githubusercontent.com/JeffxLabs/zrouteredemption/main/data/hero_skills.json"
-       target="_blank" rel="noopener">hero_skills.json</a>
-  </p>
+<header>
+	
+	<div class="toolbar">
+  <label for="language" id="languageLabel">Langue</label>
+  <select id="language">
+    <option value="fr">🇫🇷 Français</option>
+    <option value="en">🇬🇧 English</option>
+    <option value="ru">🇷🇺 Русский</option>
+    <option value="ja">🇯🇵 日本語</option>
+    <option value="es">🇪🇸 Español</option>
+  </select>
+	</div>
 
-  <div id="status" class="status"></div>
+	<img alt="banner" src="ban.jpg"/>
+  <h1 id="pageTitle">Comparateur <span style="color:var(--green)">DPS</span></h1>
+  <p id="pageSubtitle">Compare les dégâts de tes héros et classe tous les champions.</p>
+</header>
 
-  <section class="controls">
-    <input id="search" type="search">
-    <select id="star">
-      <option value="1" data-star="1"></option>
-      <option value="2" data-star="2"></option>
-      <option value="3" data-star="3"></option>
-      <option value="4" data-star="4"></option>
-      <option value="5" data-star="5"></option>
-      <option value="all" data-i18n="allStars"></option>
-    </select>
-    <select id="sort">
-      <option value="name" data-i18n="sortName"></option>
-      <option value="dps" data-i18n="sortTotal"></option>
-      <option value="auto" data-i18n="sortAuto"></option>
-      <option value="skill" data-i18n="sortSkill"></option>
-    </select>
-    <button id="export" data-i18n="export"></button>
+<div id="status" class="status">Chargement du catalogue…</div>
+
+<div class="workspace">
+  <section class="comparison-column">
+    <div class="heroes" id="heroes"></div>
+
+    <section class="panel">
+      <h2 data-i18n="comparisonTitle">Comparaison des dégâts</h2>
+      <p data-i18n="comparisonDescription">
+        Comparaison à ATQ égale. Les frappes et les cibles sont prises en compte.
+      </p>
+      <div id="comparisons"></div>
+    </section>
+
+    <section class="total">
+      <h2 data-i18n="totalDps">DPS TOTAL RELATIF</h2>
+      <div class="total-values">
+        <div>
+          <span id="name0"></span>
+          <strong id="total0">0</strong>
+          <span data-i18n="damagePerSecond">DÉGÂTS / SECONDE</span>
+        </div>
+        <div class="vs">VS</div>
+        <div>
+          <span id="name1"></span>
+          <strong id="total1">0</strong>
+          <span data-i18n="damagePerSecond">DÉGÂTS / SECONDE</span>
+        </div>
+      </div>
+      <div class="total-track">
+        <div class="half left"><div class="fill" id="totalFill0"></div></div>
+        <div class="half"><div class="fill" id="totalFill1"></div></div>
+      </div>
+      <p class="result" id="winner"></p>
+    </section>
   </section>
 
-  <div id="summary" class="muted"></div>
+  <aside class="ranking-column">
+    <section class="panel">
+      <div class="ranking-heading">
+        <h2 data-i18n="rankingTitle">Classement des héros</h2>
+        <div class="ranking-controls">
+          <label for="rankingStars" data-i18n="starsLabel">Étoiles</label>
+          <select id="rankingStars">
+            <option value="1">★ 1</option>
+            <option value="2">★★ 2</option>
+            <option value="3" selected>★★★ 3</option>
+            <option value="4">★★★★ 4</option>
+            <option value="5">★★★★★ 5</option>
+          </select>
+        </div>
+      </div>
 
-  <h2 data-i18n="tableTitle"></h2>
-  <div class="table-wrap">
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
+      <p data-i18n="rankingDescription">
+        Clique sur une colonne pour trier. Clique une seconde fois pour inverser l'ordre.
+      </p>
 
-  <details>
-    <summary data-i18n="detailsTitle"></summary>
-    <p data-i18n="d1"></p>
-    <p data-i18n="d2"></p>
-    <p data-i18n="d3"></p>
-    <p data-i18n="d4"></p>
-    <p data-i18n="d5"></p>
-  </details>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><button data-sort="name"><span data-i18n="hero">Héros</span><span class="arrow" id="arrow-name"></span></button></th>
+              <th><button data-sort="auto"><span data-i18n="autoShort">Auto</span><span class="arrow" id="arrow-auto"></span></button></th>
+              <th><button data-sort="skill"><span data-i18n="skillShort">Compétence</span><span class="arrow" id="arrow-skill"></span></button></th>
+              <th><button data-sort="total"><span data-i18n="totalShort">DPS total</span><span class="arrow" id="arrow-total"> ↓</span></button></th>
+            </tr>
+          </thead>
+          <tbody id="rankingBody">
+            <tr><td colspan="4" class="empty">…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" id="rankingCount"></p>
+    </section>
+  </aside>
+</div>
 
-  <footer data-i18n="footer"></footer>
+<p class="footnote" data-i18n="footnote">
+  Les dégâts sont calculés à ATQ égale. Les coefficients sont multipliés par le nombre
+  de frappes successives et de cibles, puis divisés par le cooldown.
+</p>
 </main>
 
 <script>
 "use strict";
 
-const DATA_URL =
-  "https://raw.githubusercontent.com/JeffxLabs/zrouteredemption/main/data/hero_skills.json";
+const BASE =
+  "https://raw.githubusercontent.com/JeffxLabs/zrouteredemption/main/";
+const DATA_URL = BASE + "data/heroes_directory.json";
 
-/* ------------------------------------------------------------------ */
-/* Traductions                                                         */
-/* ------------------------------------------------------------------ */
+let HEROES = [];
+let language = "fr";
+let rankingSort = { key:"total", direction:-1 };
 
-const LOCALES = {
-  fr: "fr-FR", en: "en-US", ru: "ru-RU", ja: "ja-JP", es: "es-ES"
-};
+const selected = [
+  { heroId:10005, stars:3 },
+  { heroId:10006, stars:3 }
+];
 
 const I18N = {
-  fr: {
-    pageTitle: "Z-Route Redemption — Calculateur DPS",
-    title: "Z-Route Redemption — DPS des héros",
-    intro: "DPS théorique des attaques automatiques et des compétences de combat, de 1 à 5 étoiles, calculé à partir des descriptions individuelles.",
-    language: "Langue",
-    source: "Source :",
-    loading: "Chargement des données…",
-    loaded: "{n} héros chargés. Les calculs sont prêts.",
-    error: "Impossible de charger les données. Vérifie ta connexion et ouvre cette page depuis un navigateur autorisant l'accès à GitHub Raw. Erreur : {e}",
-    searchPlaceholder: "Rechercher un héros…",
-    starOne: "{n} étoile",
-    starMany: "{n} étoiles",
-    allStars: "Toutes les étoiles",
-    sortName: "Trier par nom",
-    sortTotal: "DPS total décroissant",
-    sortAuto: "DPS automatique décroissant",
-    sortSkill: "DPS compétence décroissant",
-    export: "Exporter CSV",
-    tableTitle: "DPS par héros",
-    thHero: "Héros",
-    thStar: "Étoile",
-    thAuto: "Auto (% ATQ/s)",
-    thSkill: "Compétence (% ATQ/s)",
-    thTotal: "DPS total (% ATQ/s)",
-    summary: "{shown} ligne(s) affichée(s) sur {total}.",
-    na: "N/D",
-    heroDefault: "Héros {id}",
-    detailsTitle: "Comprendre les calculs et leurs limites",
-    d1: "Pour chaque compétence offensive, le coefficient est lu dans le texte de la description correspondant à l'étoile. Les descriptions générales des améliorations ne sont pas utilisées pour reconstruire ce coefficient.",
-    d2: "Formule : DPS = coefficient de dégâts × nombre de coups × nombre de cibles explicites ÷ temps de recharge.",
-    d3: "Le résultat est exprimé en % ATQ par seconde. Par exemple, 100 % ATQ/s signifie l'équivalent d'une fois l'ATQ de référence par seconde.",
-    d4: "Les descriptions qui ne permettent pas d'identifier sans ambiguïté le coefficient ou le temps de recharge sont marquées « N/D ». Les cibles implicites, les passifs et les bonus d'ATQ ne sont pas inventés ni estimés.",
-    d5: "Le calcul additionne les dégâts des cibles explicitement indiquées. Si une compétence touche plusieurs cibles, le DPS total peut donc être supérieur au DPS subi par une cible unique.",
-    footer: "Calcul local dans le navigateur à partir du JSON distant. Les résultats dépendent de la version du fichier source.",
-    csvId: "ID",
-    csvHero: "Héros",
-    csvStars: "Étoiles",
-    csvAuto: "DPS automatique (% ATQ/s)",
-    csvSkill: "DPS compétence (% ATQ/s)",
-    csvTotal: "DPS total (% ATQ/s)"
-  },
-
-  en: {
-    pageTitle: "Z-Route Redemption — DPS Calculator",
-    title: "Z-Route Redemption — Hero DPS",
-    intro: "Theoretical DPS of auto attacks and combat skills, from 1 to 5 stars, calculated from the individual descriptions.",
-    language: "Language",
-    source: "Source:",
-    loading: "Loading data…",
-    loaded: "{n} heroes loaded. Calculations are ready.",
-    error: "Unable to load the data. Check your connection and open this page in a browser that allows access to GitHub Raw. Error: {e}",
-    searchPlaceholder: "Search for a hero…",
-    starOne: "{n} star",
-    starMany: "{n} stars",
-    allStars: "All stars",
-    sortName: "Sort by name",
-    sortTotal: "Total DPS, descending",
-    sortAuto: "Auto DPS, descending",
-    sortSkill: "Skill DPS, descending",
-    export: "Export CSV",
-    tableTitle: "DPS per hero",
-    thHero: "Hero",
-    thStar: "Star",
-    thAuto: "Auto (% ATK/s)",
-    thSkill: "Skill (% ATK/s)",
-    thTotal: "Total DPS (% ATK/s)",
-    summary: "{shown} row(s) displayed out of {total}.",
-    na: "N/A",
-    heroDefault: "Hero {id}",
-    detailsTitle: "Understanding the calculations and their limits",
-    d1: "For each offensive skill, the coefficient is read from the description text matching the star level. The general upgrade descriptions are not used to rebuild this coefficient.",
-    d2: "Formula: DPS = damage coefficient × number of hits × number of explicit targets ÷ cooldown.",
-    d3: "The result is expressed in % ATK per second. For example, 100% ATK/s means the equivalent of the reference ATK once per second.",
-    d4: "Descriptions that do not allow the coefficient or the cooldown to be identified unambiguously are marked “N/A”. Implicit targets, passives and ATK bonuses are neither invented nor estimated.",
-    d5: "The calculation adds up the damage dealt to the explicitly stated targets. If a skill hits several targets, the total DPS may therefore be higher than the DPS received by a single target.",
-    footer: "Calculated locally in the browser from the remote JSON. Results depend on the version of the source file.",
-    csvId: "ID",
-    csvHero: "Hero",
-    csvStars: "Stars",
-    csvAuto: "Auto DPS (% ATK/s)",
-    csvSkill: "Skill DPS (% ATK/s)",
-    csvTotal: "Total DPS (% ATK/s)"
-  },
-
-  ru: {
-    pageTitle: "Z-Route Redemption — Калькулятор DPS",
-    title: "Z-Route Redemption — DPS героев",
-    intro: "Теоретический DPS автоатак и боевых навыков от 1 до 5 звёзд, рассчитанный по отдельным описаниям.",
-    language: "Язык",
-    source: "Источник:",
-    loading: "Загрузка данных…",
-    loaded: "Загружено героев: {n}. Расчёты готовы.",
-    error: "Не удалось загрузить данные. Проверьте подключение и откройте страницу в браузере, разрешающем доступ к GitHub Raw. Ошибка: {e}",
-    searchPlaceholder: "Поиск героя…",
-    starOne: "{n} звезда",
-    starMany: "Звёзд: {n}",
-    allStars: "Все звёзды",
-    sortName: "Сортировать по имени",
-    sortTotal: "Общий DPS по убыванию",
-    sortAuto: "DPS автоатаки по убыванию",
-    sortSkill: "DPS навыка по убыванию",
-    export: "Экспорт в CSV",
-    tableTitle: "DPS по героям",
-    thHero: "Герой",
-    thStar: "Звезда",
-    thAuto: "Авто (% АТК/с)",
-    thSkill: "Навык (% АТК/с)",
-    thTotal: "Общий DPS (% АТК/с)",
-    summary: "Показано строк: {shown} из {total}.",
-    na: "Н/Д",
-    heroDefault: "Герой {id}",
-    detailsTitle: "Как устроены расчёты и их ограничения",
-    d1: "Для каждого атакующего навыка коэффициент считывается из текста описания, соответствующего уровню звёзд. Общие описания улучшений для восстановления этого коэффициента не используются.",
-    d2: "Формула: DPS = коэффициент урона × число ударов × число явно указанных целей ÷ время перезарядки.",
-    d3: "Результат выражается в % АТК в секунду. Например, 100 % АТК/с означает эквивалент базовой АТК один раз в секунду.",
-    d4: "Описания, по которым нельзя однозначно определить коэффициент или время перезарядки, помечаются «Н/Д». Неявные цели, пассивные эффекты и бонусы АТК не выдумываются и не оцениваются.",
-    d5: "Расчёт суммирует урон по явно указанным целям. Если навык поражает несколько целей, общий DPS может быть выше, чем DPS, получаемый одной целью.",
-    footer: "Расчёт выполняется локально в браузере на основе удалённого JSON. Результаты зависят от версии исходного файла.",
-    csvId: "ID",
-    csvHero: "Герой",
-    csvStars: "Звёзды",
-    csvAuto: "DPS автоатаки (% АТК/с)",
-    csvSkill: "DPS навыка (% АТК/с)",
-    csvTotal: "Общий DPS (% АТК/с)"
-  },
-
-  ja: {
-    pageTitle: "Z-Route Redemption — DPS計算ツール",
-    title: "Z-Route Redemption — ヒーローDPS",
-    intro: "星1〜5における通常攻撃と戦闘スキルの理論上のDPSを、個別の説明文から計算します。",
-    language: "言語",
-    source: "ソース：",
-    loading: "データを読み込み中…",
-    loaded: "{n}体のヒーローを読み込みました。計算の準備ができました。",
-    error: "データを読み込めませんでした。接続を確認し、GitHub Rawへのアクセスを許可しているブラウザでこのページを開いてください。エラー：{e}",
-    searchPlaceholder: "ヒーローを検索…",
-    starOne: "星{n}",
-    starMany: "星{n}",
-    allStars: "すべての星",
-    sortName: "名前順",
-    sortTotal: "合計DPS（降順）",
-    sortAuto: "通常攻撃DPS（降順）",
-    sortSkill: "スキルDPS（降順）",
-    export: "CSVを出力",
-    tableTitle: "ヒーロー別DPS",
-    thHero: "ヒーロー",
-    thStar: "星",
-    thAuto: "通常攻撃（% ATK/秒）",
-    thSkill: "スキル（% ATK/秒）",
-    thTotal: "合計DPS（% ATK/秒）",
-    summary: "{total}行中{shown}行を表示しています。",
-    na: "該当なし",
-    heroDefault: "ヒーロー {id}",
-    detailsTitle: "計算方法とその制限について",
-    d1: "各攻撃スキルの係数は、星の段階に対応する説明文から読み取ります。強化に関する一般的な説明文は、この係数の再構築には使用しません。",
-    d2: "計算式：DPS ＝ ダメージ係数 × ヒット数 × 明示されたターゲット数 ÷ クールダウン。",
-    d3: "結果は1秒あたりのATK割合（% ATK/秒）で表されます。たとえば100% ATK/秒は、基準ATKを毎秒1回分与えることに相当します。",
-    d4: "係数やクールダウンを一意に特定できない説明文は「該当なし」と表示されます。暗黙のターゲット、パッシブ、ATKボーナスは推測も補完もしていません。",
-    d5: "計算では、明示されたターゲットへのダメージを合算します。スキルが複数のターゲットに当たる場合、合計DPSは単体のターゲットが受けるDPSより大きくなることがあります。",
-    footer: "リモートのJSONをもとに、ブラウザ上でローカルに計算しています。結果はソースファイルのバージョンに依存します。",
-    csvId: "ID",
-    csvHero: "ヒーロー",
-    csvStars: "星",
-    csvAuto: "通常攻撃DPS（% ATK/秒）",
-    csvSkill: "スキルDPS（% ATK/秒）",
-    csvTotal: "合計DPS（% ATK/秒）"
-  },
-
-  es: {
-    pageTitle: "Z-Route Redemption — Calculadora de DPS",
-    title: "Z-Route Redemption — DPS de los héroes",
-    intro: "DPS teórico de los ataques automáticos y las habilidades de combate, de 1 a 5 estrellas, calculado a partir de las descripciones individuales.",
-    language: "Idioma",
-    source: "Fuente:",
-    loading: "Cargando datos…",
-    loaded: "{n} héroes cargados. Los cálculos están listos.",
-    error: "No se pudieron cargar los datos. Comprueba tu conexión y abre esta página en un navegador que permita el acceso a GitHub Raw. Error: {e}",
-    searchPlaceholder: "Buscar un héroe…",
-    starOne: "{n} estrella",
-    starMany: "{n} estrellas",
-    allStars: "Todas las estrellas",
-    sortName: "Ordenar por nombre",
-    sortTotal: "DPS total descendente",
-    sortAuto: "DPS automático descendente",
-    sortSkill: "DPS de habilidad descendente",
-    export: "Exportar CSV",
-    tableTitle: "DPS por héroe",
-    thHero: "Héroe",
-    thStar: "Estrella",
-    thAuto: "Auto (% ATQ/s)",
-    thSkill: "Habilidad (% ATQ/s)",
-    thTotal: "DPS total (% ATQ/s)",
-    summary: "{shown} fila(s) mostrada(s) de {total}.",
-    na: "N/D",
-    heroDefault: "Héroe {id}",
-    detailsTitle: "Entender los cálculos y sus límites",
-    d1: "Para cada habilidad ofensiva, el coeficiente se lee en el texto de la descripción correspondiente a la estrella. Las descripciones generales de las mejoras no se usan para reconstruir este coeficiente.",
-    d2: "Fórmula: DPS = coeficiente de daño × número de golpes × número de objetivos explícitos ÷ tiempo de reutilización.",
-    d3: "El resultado se expresa en % de ATQ por segundo. Por ejemplo, 100 % ATQ/s equivale a una vez el ATQ de referencia por segundo.",
-    d4: "Las descripciones que no permiten identificar sin ambigüedad el coeficiente o el tiempo de reutilización se marcan como «N/D». Los objetivos implícitos, los pasivos y las bonificaciones de ATQ no se inventan ni se estiman.",
-    d5: "El cálculo suma el daño de los objetivos indicados explícitamente. Si una habilidad alcanza a varios objetivos, el DPS total puede ser superior al DPS recibido por un único objetivo.",
-    footer: "Cálculo local en el navegador a partir del JSON remoto. Los resultados dependen de la versión del archivo fuente.",
-    csvId: "ID",
-    csvHero: "Héroe",
-    csvStars: "Estrellas",
-    csvAuto: "DPS automático (% ATQ/s)",
-    csvSkill: "DPS de habilidad (% ATQ/s)",
-    csvTotal: "DPS total (% ATQ/s)"
-  }
+fr:{
+  subtitle:"Compare les dégâts de tes héros et classe tous les champions.",
+  language:"Langue",loading:"Chargement du catalogue…",
+  loaded:n=>`${n} héros chargés.`,loadError:"Impossible de charger le catalogue GitHub.",
+  chooseHero:"Choisir un héros",stars:"Étoiles",heroSide:"HÉROS",
+  attacks:"ATTAQUES & STATISTIQUES",auto:"Attaque automatique",
+  skill:"Compétence de combat",damageHit:"Dégâts / frappe",
+  cooldown:"Cooldown",autoDps:"DPS automatique total",
+  skillDps:"DPS de compétence total",hit:"frappe(s)",target:"cible(s)",
+  comparisonTitle:"Comparaison des dégâts",
+  comparisonDescription:"Comparaison à ATQ égale. Les frappes et les cibles sont prises en compte.",
+  autoCompare:"Attaque automatique · DPS total",
+  skillCompare:"Compétence de combat · DPS total",totalCompare:"DPS total",
+  totalDps:"DPS TOTAL RELATIF",damagePerSecond:"DÉGÂTS / SECONDE",
+  tie:"Égalité de DPS total",
+  winner:(name,n)=>`${name} inflige ${n} de DPS relatif supplémentaire`,
+  rankingTitle:"Classement des héros",
+  rankingDescription:"Clique sur une colonne pour trier. Clique une seconde fois pour inverser l'ordre.",
+  hero:"Héros",autoShort:"Auto",skillShort:"Compétence",totalShort:"DPS total",
+  count:n=>`${n} héros classés · coefficients relatifs à ATQ égale`,
+  noData:"Aucune donnée disponible",notAvailable:"N/D",
+  footnote:"Les dégâts sont calculés à ATQ égale. Les coefficients sont multipliés par le nombre de frappes successives et de cibles, puis divisés par le cooldown.",
+  sortName:"Nom",sortAuto:"Dégâts d'attaque automatique",sortSkill:"Dégâts de compétence",sortTotal:"DPS total"
+},
+en:{
+  subtitle:"Compare your heroes' damage and rank every champion.",
+  language:"Language",loading:"Loading hero catalogue…",
+  loaded:n=>`${n} heroes loaded.`,loadError:"Unable to load the GitHub catalogue.",
+  chooseHero:"Choose a hero",stars:"Stars",heroSide:"HERO",
+  attacks:"ATTACKS & STATS",auto:"Basic attack",
+  skill:"Combat skill",damageHit:"Damage / hit",
+  cooldown:"Cooldown",autoDps:"Total basic attack DPS",
+  skillDps:"Total skill DPS",hit:"hit(s)",target:"target(s)",
+  comparisonTitle:"Damage comparison",
+  comparisonDescription:"Comparison at equal ATK. Repeated hits and targets are included.",
+  autoCompare:"Basic attack · total DPS",
+  skillCompare:"Combat skill · total DPS",totalCompare:"Total DPS",
+  totalDps:"RELATIVE TOTAL DPS",damagePerSecond:"DAMAGE / SECOND",
+  tie:"Total DPS tie",
+  winner:(name,n)=>`${name} deals ${n} more relative DPS`,
+  rankingTitle:"Hero ranking",
+  rankingDescription:"Click a column to sort. Click it again to reverse the order.",
+  hero:"Hero",autoShort:"Basic",skillShort:"Skill",totalShort:"Total DPS",
+  count:n=>`${n} heroes ranked · relative coefficients at equal ATK`,
+  noData:"No data available",notAvailable:"N/A",
+  footnote:"Damage is calculated at equal ATK. Coefficients are multiplied by the number of repeated hits and targets, then divided by cooldown.",
+  sortName:"Name",sortAuto:"Basic attack damage",sortSkill:"Skill damage",sortTotal:"Total DPS"
+},
+ru:{
+  subtitle:"Сравнивай урон героев и смотри рейтинг чемпионов.",
+  language:"Язык",loading:"Загрузка каталога героев…",
+  loaded:n=>`Загружено героев: ${n}.`,loadError:"Не удалось загрузить каталог GitHub.",
+  chooseHero:"Выбрать героя",stars:"Звёзды",heroSide:"ГЕРОЙ",
+  attacks:"АТАКИ И ХАРАКТЕРИСТИКИ",auto:"Обычная атака",
+  skill:"Боевая способность",damageHit:"Урон / удар",
+  cooldown:"Перезарядка",autoDps:"Общий DPS обычной атаки",
+  skillDps:"Общий DPS способности",hit:"удар(а)",target:"цель(и)",
+  comparisonTitle:"Сравнение урона",
+  comparisonDescription:"Сравнение при одинаковой ATK. Учитываются повторные удары и цели.",
+  autoCompare:"Обычная атака · общий DPS",
+  skillCompare:"Боевая способность · общий DPS",totalCompare:"Общий DPS",
+  totalDps:"ОБЩИЙ ОТНОСИТЕЛЬНЫЙ DPS",damagePerSecond:"УРОН / СЕКУНДУ",
+  tie:"Одинаковый общий DPS",
+  winner:(name,n)=>`${name}: на ${n} относительного DPS больше`,
+  rankingTitle:"Рейтинг героев",
+  rankingDescription:"Нажми на заголовок для сортировки. Повторное нажатие меняет порядок.",
+  hero:"Герой",autoShort:"Атака",skillShort:"Навык",totalShort:"Общий DPS",
+  count:n=>`Героев в рейтинге: ${n} · коэффициенты при одинаковой ATK`,
+  noData:"Нет данных",notAvailable:"Н/Д",
+  footnote:"Урон рассчитывается при одинаковой ATK. Коэффициенты умножаются на число последовательных ударов и целей, затем делятся на перезарядку.",
+  sortName:"Имя",sortAuto:"Урон обычной атаки",sortSkill:"Урон способности",sortTotal:"Общий DPS"
+},
+ja:{
+  subtitle:"ヒーローのダメージを比較し、全チャンピオンをランキングします。",
+  language:"言語",loading:"ヒーローデータを読み込み中…",
+  loaded:n=>`${n}人のヒーローを読み込みました。`,loadError:"GitHubのデータを読み込めませんでした。",
+  chooseHero:"ヒーローを選択",stars:"星",heroSide:"ヒーロー",
+  attacks:"攻撃・ステータス",auto:"通常攻撃",
+  skill:"戦闘スキル",damageHit:"1ヒットのダメージ",
+  cooldown:"クールダウン",autoDps:"通常攻撃の合計DPS",
+  skillDps:"スキルの合計DPS",hit:"ヒット",target:"ターゲット",
+  comparisonTitle:"ダメージ比較",
+  comparisonDescription:"ATKが同じ条件で比較します。連続ヒット数と対象数を計算に含めます。",
+  autoCompare:"通常攻撃 · 合計DPS",
+  skillCompare:"戦闘スキル · 合計DPS",totalCompare:"合計DPS",
+  totalDps:"相対合計DPS",damagePerSecond:"毎秒ダメージ",
+  tie:"合計DPSは同じです",
+  winner:(name,n)=>`${name}の相対DPSが${n}高い`,
+  rankingTitle:"ヒーローランキング",
+  rankingDescription:"列名をクリックして並べ替えます。もう一度クリックすると順序が逆になります。",
+  hero:"ヒーロー",autoShort:"通常攻撃",skillShort:"スキル",totalShort:"合計DPS",
+  count:n=>`${n}人をランキング · 同じATKでの相対係数`,
+  noData:"データがありません",notAvailable:"データなし",
+  footnote:"同じATKを基準に計算します。係数に連続ヒット数と対象数を掛け、クールダウンで割ります。",
+  sortName:"名前",sortAuto:"通常攻撃ダメージ",sortSkill:"スキルダメージ",sortTotal:"合計DPS"
+},
+es:{
+  subtitle:"Compara el daño de tus héroes y clasifica a todos los campeones.",
+  language:"Idioma",loading:"Cargando catálogo de héroes…",
+  loaded:n=>`${n} héroes cargados.`,loadError:"No se pudo cargar el catálogo de GitHub.",
+  chooseHero:"Elegir héroe",stars:"Estrellas",heroSide:"HÉROE",
+  attacks:"ATAQUES Y ESTADÍSTICAS",auto:"Ataque básico",
+  skill:"Habilidad de combate",damageHit:"Daño / golpe",
+  cooldown:"Enfriamiento",autoDps:"DPS total del ataque básico",
+  skillDps:"DPS total de habilidad",hit:"golpe(s)",target:"objetivo(s)",
+  comparisonTitle:"Comparación de daño",
+  comparisonDescription:"Comparación con ATQ igual. Se incluyen los golpes repetidos y los objetivos.",
+  autoCompare:"Ataque básico · DPS total",
+  skillCompare:"Habilidad de combate · DPS total",totalCompare:"DPS total",
+  totalDps:"DPS TOTAL RELATIVO",damagePerSecond:"DAÑO / SEGUNDO",
+  tie:"Empate en DPS total",
+  winner:(name,n)=>`${name} inflige ${n} más de DPS relativo`,
+  rankingTitle:"Clasificación de héroes",
+  rankingDescription:"Haz clic en una columna para ordenar. Vuelve a hacer clic para invertir el orden.",
+  hero:"Héroe",autoShort:"Básico",skillShort:"Habilidad",totalShort:"DPS total",
+  count:n=>`${n} héroes clasificados · coeficientes relativos con ATQ igual`,
+  noData:"No hay datos disponibles",notAvailable:"N/D",
+  footnote:"El daño se calcula con ATQ igual. Los coeficientes se multiplican por los golpes sucesivos y los objetivos, y se dividen por el enfriamiento.",
+  sortName:"Nombre",sortAuto:"Daño de ataque básico",sortSkill:"Daño de habilidad",sortTotal:"DPS total"
+}
 };
 
-const LANG_KEY = "zroute-dps-lang";
-let lang = "fr";
-let status = { type: "loading" };
+const t = key => I18N[language][key] ?? I18N.en[key] ?? key;
+const fmt = n => Number(n).toLocaleString(language, { maximumFractionDigits:2 });
+const heroById = id => HEROES.find(h => String(h.id) === String(id));
 
-function detectLang() {
-  try {
-    const saved = localStorage.getItem(LANG_KEY);
-    if (saved && I18N[saved]) return saved;
-  } catch (e) { /* stockage indisponible */ }
-
-  const nav = (navigator.language || "fr").slice(0, 2).toLowerCase();
-  return I18N[nav] ? nav : "fr";
-}
-
-function t(key, vars = {}) {
-  const dict = I18N[lang] || I18N.fr;
-  let text = dict[key] ?? I18N.fr[key] ?? key;
-  for (const [name, value] of Object.entries(vars)) {
-    text = text.replaceAll(`{${name}}`, value);
-  }
-  return text;
-}
-
-function starLabel(n) {
-  return t(n === 1 ? "starOne" : "starMany", { n });
-}
-
-function renderStatus() {
-  if (status.type === "loading") {
-    $("status").textContent = t("loading");
-  } else if (status.type === "loaded") {
-    $("status").textContent = t("loaded", { n: status.count });
-  } else {
-    $("status").textContent = t("error", { e: status.message });
-  }
-}
-
-function applyLanguage() {
-  document.documentElement.lang = lang;
-  document.title = t("pageTitle");
-
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-
-  document.querySelectorAll("[data-star]").forEach(el => {
-    el.textContent = starLabel(Number(el.dataset.star));
-  });
-
-  $("search").placeholder = t("searchPlaceholder");
-  $("lang").value = lang;
-
-  renderStatus();
-  render();
-}
-
-function setLanguage(newLang) {
-  if (!I18N[newLang]) return;
-  lang = newLang;
-  try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignoré */ }
-  applyLanguage();
-}
-
-/* ------------------------------------------------------------------ */
-/* Calculs                                                             */
-/* ------------------------------------------------------------------ */
-
-let heroes = {};
-let rows = [];
-
-const $ = id => document.getElementById(id);
-
-function parsePercent(text) {
-  if (!text) return null;
-
-  // Extrait le coefficient de dégâts associé à ATK dans la description,
-  // sans utiliser les bonus génériques de star_upgrades.
-  const patterns = [
-    /damage equal to\s*([\d.]+)\s*%\s*ATK/i,
-    /dealing\s+([\d.]+)\s*%\s*ATK\s+damage/i,
-    /deals?\s+([\d.]+)\s*%\s*ATK\s+damage/i,
-    /damage of\s*([\d.]+)\s*%\s*ATK/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return Number(match[1]);
-  }
-
-  return null;
-}
-
-function parseHits(text) {
-  if (!text) return 1;
-
-  const patterns = [
-    /(\d+)\s+times\b/i,
-    /(\d+)\s+consecutive attacks?\b/i,
-    /attacks?\s+(\d+)\s+times\b/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return Number(match[1]);
-  }
-
-  return 1;
-}
-
-function getTargets(text) {
-  if (!text) return 1;
-
-  const patterns = [
-    /\b(?:attack|attacks|at|target|targets)\s+(\d+)\s+(?:random\s+)?(?:enemies|enemy|targets)\b/i,
-    /(?:to|at)\s+(\d+)\s+(?:random\s+)?enemies\b/i,
-    /(\d+)\s+(?:random\s+)?enemies\b/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) return Number(match[1]);
-  }
-
-  return 1;
+function assetUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  return BASE + path.replace(/^(\.\.\/)+/, "").replace(/^\/+/, "");
 }
 
 function getSkill(hero, slot) {
-  return (hero.skills || []).find(skill => skill.slot === slot) || null;
+  return (hero.skills || []).find(s => Number(s.slot) === slot);
 }
 
-function getStarEntry(skill, star) {
+function getStarRow(skill, stars) {
   if (!skill || !Array.isArray(skill.by_star)) return null;
-  return skill.by_star.find(entry => Number(entry.star) === star) || null;
+  return skill.by_star.find(row => Number(row.star) === stars)
+      || skill.by_star.find(row => Number(row.star) === 0)
+      || null;
 }
 
-function skillDps(skill, star) {
-  const entry = getStarEntry(skill, star);
-  if (!entry || !entry.text) {
-    return { value: null, coefficient: null, cooldown: null };
-  }
-
-  const coefficient = parsePercent(entry.text);
-  const cooldown = Number(skill.cooldown_s);
-  const hits = parseHits(entry.text);
-  const targets = getTargets(entry.text);
-
-  if (
-    coefficient === null ||
-    !Number.isFinite(cooldown) ||
-    cooldown <= 0
-  ) {
-    return {
-      value: null,
-      coefficient,
-      cooldown: Number.isFinite(cooldown) ? cooldown : null
-    };
-  }
-
-  return {
-    value: coefficient * hits * targets / cooldown,
-    coefficient,
-    cooldown,
-    hits,
-    targets,
-    description: entry.text
-  };
+function parseNumber(value) {
+  if (value === null || value === undefined) return null;
+  const n = parseFloat(String(value).replace(/%/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : null;
 }
 
-function fmt(value) {
-  if (value === null || !Number.isFinite(value)) return t("na");
-  return value.toLocaleString(LOCALES[lang], {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+function getDamage(skill, stars) {
+  const row = getStarRow(skill, stars);
+  if (!row || !Array.isArray(row.args)) return null;
+  return parseNumber(row.args[0]);
 }
 
-function makeRow(heroId, hero, star) {
-  const auto = skillDps(getSkill(hero, 1), star);
-  const combat = skillDps(getSkill(hero, 2), star);
+function getCooldown(skill, stars) {
+  const row = getStarRow(skill, stars);
+  const n = parseNumber(row?.args?.[1]);
+  if (n !== null && n > 0) return n;
 
-  // Une compétence sans coefficient de dégâts est ignorée.
-  const combatDps =
-    combat.coefficient === null || combat.coefficient === 0
-      ? 0
-      : combat.value;
-
-  const total =
-    auto.value !== null && combatDps !== null
-      ? auto.value + combatDps
-      : auto.value;
-
-  return {
-    id: heroId,
-    name: hero.name || "",
-    star,
-    auto,
-    combat: { ...combat, value: combatDps },
-    total
-  };
+  const fallback = Number(skill?.cooldown_s);
+  return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
 }
 
-function allRows() {
-  const result = [];
+/*
+ * Les frappes successives sont différentes du nombre de cibles.
+ * Aucun pourcentage de dégâts n'est interprété comme un nombre de frappes.
+ */
+function getHitCount(skill, stars) {
+  if (!skill) return 1;
 
-  for (const [id, hero] of Object.entries(heroes)) {
-    for (let star = 1; star <= 5; star++) {
-      result.push(makeRow(id, hero, star));
+  let hits = 1;
+  const description = skill.description || "";
+  const match = description.match(/\b(\d+)\s+times\b/i);
+
+  if (match) hits = Number(match[1]);
+
+  for (const upgrade of (skill.star_upgrades || [])) {
+    if (Number(upgrade.star) > stars) continue;
+
+    const template = upgrade.template || "";
+    if (/increases the number of attacks to\s*\{0\}/i.test(template)) {
+      const value = parseNumber(upgrade.args?.[0]);
+      if (value !== null && Number.isInteger(value) && value >= 1) {
+        hits = value;
+      }
     }
   }
-
-  return result;
+  return Math.max(1, hits);
 }
 
-// Nom affiché : celui du JSON, ou un libellé traduit par défaut.
-function displayName(row) {
-  return row.name || t("heroDefault", { id: row.id });
-}
+/*
+ * Nombre de cibles simultanément touchées.
+ * Les améliorations explicites par étoiles sont lues en priorité.
+ */
+function getTargetCount(skill, stars) {
+  if (!skill) return 1;
 
-/* ------------------------------------------------------------------ */
-/* Affichage                                                           */
-/* ------------------------------------------------------------------ */
+  const row = getStarRow(skill, stars);
+  const texts = [row?.text, skill.description, skill.template].filter(Boolean);
 
-function render() {
-  const query = $("search").value.trim().toLocaleLowerCase(LOCALES[lang]);
-  const starFilter = $("star").value;
-  const sort = $("sort").value;
-
-  let filtered = rows.filter(row =>
-    displayName(row).toLocaleLowerCase(LOCALES[lang]).includes(query)
-  );
-
-  if (starFilter !== "all") {
-    filtered = filtered.filter(row => row.star === Number(starFilter));
-  }
-
-  filtered.sort((a, b) => {
-    if (sort === "dps") {
-      return (b.total ?? -Infinity) - (a.total ?? -Infinity);
-    }
-    if (sort === "auto") {
-      return (b.auto.value ?? -Infinity) - (a.auto.value ?? -Infinity);
-    }
-    if (sort === "skill") {
-      return (b.combat.value ?? -Infinity) - (a.combat.value ?? -Infinity);
-    }
-
-    return displayName(a).localeCompare(displayName(b), LOCALES[lang]) ||
-           a.star - b.star;
-  });
-
-  const allStars = starFilter === "all";
-
-  $("thead").innerHTML = `
-    <tr>
-      <th>${t("thHero")}</th>
-      ${allStars ? `<th>${t("thStar")}</th>` : ""}
-      <th>${t("thAuto")}</th>
-      <th>${t("thSkill")}</th>
-      <th>${t("thTotal")}</th>
-    </tr>`;
-
-  $("tbody").replaceChildren();
-
-  const fragment = document.createDocumentFragment();
-
-  for (const row of filtered) {
-    const tr = document.createElement("tr");
-
-    const cells = [
-      displayName(row),
-      ...(allStars ? [`${row.star} ★`] : []),
-      fmt(row.auto.value),
-      fmt(row.combat.value),
-      fmt(row.total)
-    ];
-
-    cells.forEach((value, index) => {
-      const td = document.createElement("td");
-      td.textContent = value;
-
-      if (index === 0) td.title = `ID : ${row.id}`;
-      if (index === cells.length - 1) td.className = "total";
-      if (allStars && index === 1) td.className = "star";
-
-      tr.appendChild(td);
-    });
-
-    fragment.appendChild(tr);
-  }
-
-  $("tbody").appendChild(fragment);
-  $("summary").textContent =
-    t("summary", { shown: filtered.length, total: rows.length });
-}
-
-function exportCsv() {
-  const query = $("search").value.trim().toLocaleLowerCase(LOCALES[lang]);
-  const starFilter = $("star").value;
-
-  const filtered = rows.filter(row =>
-    displayName(row).toLocaleLowerCase(LOCALES[lang]).includes(query) &&
-    (starFilter === "all" || row.star === Number(starFilter))
-  );
-
-  const header = [
-    t("csvId"), t("csvHero"), t("csvStars"),
-    t("csvAuto"), t("csvSkill"), t("csvTotal")
+  const patterns = [
+    /\b(\d+)\s+(?:random\s+)?enemies\b/i,
+    /\b(?:attack|attacks|hit|hits|target|targets)\s+(\d+)\s+(?:random\s+)?(?:enemies|targets)\b/i,
+    /\b(\d+)\s+(?:different\s+)?targets\b/i
   ];
 
-  const escape = value =>
-    '"' + String(value ?? "").replace(/"/g, '""') + '"';
+  for (const text of texts) {
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const n = Number(match[1]);
+        if (Number.isInteger(n) && n >= 1) return n;
+      }
+    }
+  }
+  return 1;
+}
 
-  const lines = [header.map(escape).join(";")];
+function calculate(hero, stars) {
+  const auto = getSkill(hero, 1);
+  const skill = getSkill(hero, 2);
 
-  for (const row of filtered) {
-    lines.push([
-      row.id, displayName(row), row.star,
-      row.auto.value ?? "",
-      row.combat.value ?? "",
-      row.total ?? ""
-    ].map(escape).join(";"));
+  const autoDamage = getDamage(auto, stars);
+  const skillDamage = getDamage(skill, stars);
+  const autoCooldown = getCooldown(auto, stars);
+  const skillCooldown = getCooldown(skill, stars);
+
+  const autoHits = getHitCount(auto, stars);
+  const skillHits = getHitCount(skill, stars);
+  const autoTargets = getTargetCount(auto, stars);
+  const skillTargets = getTargetCount(skill, stars);
+
+  const autoUse = autoDamage === null ? null : autoDamage * autoHits * autoTargets;
+  const skillUse = skillDamage === null ? null : skillDamage * skillHits * skillTargets;
+
+  const autoDps = autoUse !== null && autoCooldown > 0 ? autoUse / autoCooldown : 0;
+  const skillDps = skillUse !== null && skillCooldown > 0 ? skillUse / skillCooldown : 0;
+
+  return {
+    id:hero.id,
+    name:hero.display_name || hero.name || String(hero.id),
+    image:assetUrl(hero.image || hero.head),
+    stars,
+    autoDamage, skillDamage,
+    autoHits, skillHits, autoTargets, skillTargets,
+    autoCooldown, skillCooldown,
+    autoUse, skillUse, autoDps, skillDps,
+    total:autoDps + skillDps
+  };
+}
+
+function getSelectedData() {
+  return selected.map(s => {
+    const hero = heroById(s.heroId);
+    return hero ? calculate(hero, s.stars) : null;
+  });
+}
+
+function renderCards() {
+  document.getElementById("heroes").innerHTML = selected.map((sel, i) => {
+    const hero = heroById(sel.heroId);
+    const options = HEROES.map(h => {
+      const id = String(h.id);
+      const name = h.display_name || h.name || id;
+      return `<option value="${id}" ${id === String(sel.heroId) ? "selected" : ""}>${escapeHtml(name)}</option>`;
+    }).join("");
+
+    const starOptions = [1,2,3,4,5].map(n =>
+      `<option value="${n}" ${n === sel.stars ? "selected" : ""}>${"★".repeat(n)} — ${n}</option>`
+    ).join("");
+
+    const image = assetUrl(hero?.image || hero?.head);
+    const name = hero?.display_name || hero?.name || "Hero";
+
+    return `
+    <article class="card">
+      <div class="card-head">
+        <div class="side-label">${t("heroSide")} 0${i+1}</div>
+        <div class="hero-image" id="image${i}">
+          ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(name)}"
+            onerror="this.remove();this.parentElement.textContent='—'">` : "—"}
+        </div>
+        <div class="select-grid">
+          <div>
+            <label for="hero${i}">${t("chooseHero")}</label>
+            <select id="hero${i}">${options}</select>
+          </div>
+          <div>
+            <label for="stars${i}">${t("stars")}</label>
+            <select id="stars${i}">${starOptions}</select>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="section-label">${t("attacks")}</div>
+        <div class="attack">
+          <div class="attack-top">
+            <strong id="autoName${i}">${t("auto")}</strong>
+            <span class="cooldown" id="autoDetails${i}"></span>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>${t("damageHit")}</span><strong id="autoDamage${i}">—</strong></div>
+            <div class="stat"><span>${t("cooldown")}</span><strong id="autoCooldown${i}">—</strong></div>
+          </div>
+          <div class="dps-line"><span>${t("autoDps")}</span><strong id="autoDps${i}">—</strong></div>
+        </div>
+        <div class="attack">
+          <div class="attack-top">
+            <strong id="skillName${i}">${t("skill")}</strong>
+            <span class="cooldown" id="skillDetails${i}"></span>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>${t("damageHit")}</span><strong id="skillDamage${i}">—</strong></div>
+            <div class="stat"><span>${t("cooldown")}</span><strong id="skillCooldown${i}">—</strong></div>
+          </div>
+          <div class="dps-line"><span>${t("skillDps")}</span><strong id="skillDps${i}">—</strong></div>
+        </div>
+      </div>
+    </article>`;
+  }).join("");
+
+  selected.forEach((sel, i) => {
+    document.getElementById("hero" + i).addEventListener("change", e => {
+      sel.heroId = e.target.value;
+      renderCards();
+      updateComparison();
+    });
+    document.getElementById("stars" + i).addEventListener("change", e => {
+      sel.stars = Number(e.target.value);
+      updateComparison();
+    });
+  });
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  })[c]);
+}
+function escapeAttr(value) { return escapeHtml(value); }
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function barRow(label, a, b) {
+  const max = Math.max(a, b, 0.000001);
+  const wa = a / max * 100, wb = b / max * 100;
+  const ca = a > b ? "win" : a < b ? "lose" : "";
+  const cb = b > a ? "win" : b < a ? "lose" : "";
+
+  return `<div class="compare">
+    <div class="compare-head">
+      <strong>${fmt(a)}</strong><span class="compare-title">${label}</span><strong>${fmt(b)}</strong>
+    </div>
+    <div class="track">
+      <div class="half left"><div class="fill ${ca}" style="width:${wa}%"></div></div>
+      <div class="midline"></div>
+      <div class="half"><div class="fill ${cb}" style="width:${wb}%"></div></div>
+    </div>
+  </div>`;
+}
+
+function updateComparison() {
+  const heroes = getSelectedData();
+  if (heroes.some(h => !h)) return;
+
+  heroes.forEach((h, i) => {
+    const auto = getSkill(heroById(h.id), 1);
+    const skill = getSkill(heroById(h.id), 2);
+
+    setText("autoName" + i, auto?.name || t("auto"));
+    setText("skillName" + i, skill?.name || t("skill"));
+
+    setText("autoDetails" + i, `${h.autoHits} ${t("hit")} · ${h.autoTargets} ${t("target")}`);
+    setText("skillDetails" + i, `${h.skillHits} ${t("hit")} · ${h.skillTargets} ${t("target")}`);
+
+    setText("autoDamage" + i, h.autoDamage === null ? t("notAvailable") : fmt(h.autoDamage) + "%");
+    setText("autoCooldown" + i, h.autoCooldown ? fmt(h.autoCooldown) + " s" : t("notAvailable"));
+    setText("autoDps" + i, fmt(h.autoDps));
+
+    setText("skillDamage" + i, h.skillDamage === null ? t("notAvailable") : fmt(h.skillDamage) + "%");
+    setText("skillCooldown" + i, h.skillCooldown ? fmt(h.skillCooldown) + " s" : t("notAvailable"));
+    setText("skillDps" + i, fmt(h.skillDps));
+
+    setText("name" + i, `${h.name} · ${h.stars} ★`);
+    setText("total" + i, fmt(h.total));
+  });
+
+  document.getElementById("comparisons").innerHTML =
+    barRow(t("autoCompare"), heroes[0].autoDps, heroes[1].autoDps) +
+    barRow(t("skillCompare"), heroes[0].skillDps, heroes[1].skillDps) +
+    barRow(t("totalCompare"), heroes[0].total, heroes[1].total);
+
+  const max = Math.max(heroes[0].total, heroes[1].total, 0.000001);
+  [0,1].forEach(i => {
+    const fill = document.getElementById("totalFill" + i);
+    fill.style.width = (heroes[i].total / max * 100) + "%";
+    fill.className = "fill " + (
+      heroes[i].total > heroes[1-i].total ? "win" :
+      heroes[i].total < heroes[1-i].total ? "lose" : ""
+    );
+  });
+
+  const diff = Math.abs(heroes[0].total - heroes[1].total);
+  if (diff < 0.000001) {
+    setText("winner", t("tie"));
+    document.getElementById("winner").style.color = "var(--text)";
+  } else {
+    const i = heroes[0].total > heroes[1].total ? 0 : 1;
+    setText("winner", t("winner")(heroes[i].name, fmt(diff)));
+    document.getElementById("winner").style.color = "var(--green)";
+  }
+}
+
+function renderRanking() {
+  const stars = Number(document.getElementById("rankingStars").value);
+
+  const rows = HEROES.map(hero => calculate(hero, stars));
+
+  rows.sort((a, b) => {
+    let result;
+    if (rankingSort.key === "name") {
+      result = a.name.localeCompare(b.name, language);
+    } else {
+      result = (a[rankingSort.key] || 0) - (b[rankingSort.key] || 0);
+    }
+    return result * rankingSort.direction;
+  });
+
+  const best = rows.length ? rows[0] : null;
+  const body = document.getElementById("rankingBody");
+
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="4" class="empty">${t("noData")}</td></tr>`;
+  } else {
+    body.innerHTML = rows.map((h, index) => `
+      <tr class="${index === 0 && rankingSort.key !== "name" && rankingSort.direction === -1 ? "best" : ""}">
+        <td>
+          <div class="hero-cell">
+            ${h.image ? `<img loading="lazy" src="${escapeAttr(h.image)}" alt=""
+              onerror="this.style.visibility='hidden'">` : ""}
+            <span class="hero-name" title="${escapeAttr(h.name)}">
+              <span class="rank-number">${index + 1}.</span>${escapeHtml(h.name)}
+            </span>
+          </div>
+        </td>
+        <td class="damage-cell">${fmt(h.autoUse ?? 0)}%</td>
+        <td class="damage-cell">${fmt(h.skillUse ?? 0)}%</td>
+        <td class="dps-cell">${fmt(h.total)}</td>
+      </tr>
+    `).join("");
   }
 
-  const blob = new Blob(
-    ["\uFEFF" + lines.join("\r\n")],
-    { type: "text/csv;charset=utf-8;" }
-  );
+  setText("rankingCount", t("count")(rows.length));
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "zroute-redemption-dps.csv";
-  link.click();
-  URL.revokeObjectURL(url);
+  ["name","auto","skill","total"].forEach(key => {
+    const arrow = document.getElementById("arrow-" + key);
+    arrow.textContent = rankingSort.key === key
+      ? (rankingSort.direction === 1 ? " ↑" : " ↓")
+      : "";
+  });
 }
+
+function translatePage() {
+  document.documentElement.lang = language;
+  document.getElementById("languageLabel").textContent = t("language");
+  document.getElementById("pageSubtitle").textContent = t("subtitle");
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+
+  if (HEROES.length) {
+    renderCards();
+    updateComparison();
+    renderRanking();
+  }
+}
+
+document.getElementById("language").addEventListener("change", e => {
+  language = e.target.value;
+  translatePage();
+});
+
+document.getElementById("rankingStars").addEventListener("change", renderRanking);
+
+document.querySelectorAll("[data-sort]").forEach(button => {
+  button.addEventListener("click", () => {
+    const key = button.dataset.sort;
+
+    if (rankingSort.key === key) {
+      rankingSort.direction *= -1;
+    } else {
+      rankingSort.key = key;
+      rankingSort.direction = key === "name" ? 1 : -1;
+    }
+    renderRanking();
+  });
+});
 
 async function init() {
+  setText("status", t("loading"));
+
   try {
     const response = await fetch(DATA_URL);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error("HTTP " + response.status);
 
     const data = await response.json();
-    heroes = data.heroes || {};
-    rows = allRows();
 
-    status = { type: "loaded", count: Object.keys(heroes).length };
-    renderStatus();
-    render();
+    // Accepte un tableau direct ou un objet contenant le tableau.
+    const source = Array.isArray(data) ? data :
+      (data.heroes || data.data || []);
+
+    HEROES = source.filter(hero =>
+      getSkill(hero, 1) && getSkill(hero, 2)
+    ).sort((a, b) =>
+      (a.display_name || a.name || "").localeCompare(b.display_name || b.name || "")
+    );
+
+    if (!HEROES.length) {
+      throw new Error("No compatible heroes found in the expected schema.");
+    }
+
+    selected.forEach((selection, i) => {
+      if (!heroById(selection.heroId)) {
+        selection.heroId = HEROES[Math.min(i, HEROES.length - 1)].id;
+      }
+    });
+
+    setText("status", t("loaded")(HEROES.length));
+    translatePage();
   } catch (error) {
     console.error(error);
-    status = { type: "error", message: error.message };
-    renderStatus();
+    setText("status", t("loadError"));
+    document.getElementById("rankingBody").innerHTML =
+      `<tr><td colspan="4" class="empty">${t("loadError")}</td></tr>`;
   }
 }
 
-$("search").addEventListener("input", render);
-$("star").addEventListener("change", render);
-$("sort").addEventListener("change", render);
-$("export").addEventListener("click", exportCsv);
-$("lang").addEventListener("change", e => setLanguage(e.target.value));
-
-lang = detectLang();
-applyLanguage();
 init();
 </script>
 </body>
